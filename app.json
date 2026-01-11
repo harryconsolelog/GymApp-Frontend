@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "WellVantage Demo App",
+    "slug": "wellvantage-demo-app-frontend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "wellvantage",
+    "userInterfaceStyle": "light",
+    "extra": {
+      "googleClientId": "1081445397208-5sj3o06ct73i182g4dn05k2r8eont345.apps.googleusercontent.com"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.wellvantage.app",
+      "versionCode": 1,
+      "permissions": [],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wellvantage.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "name": "WellVantage Demo App"
+    },
+    "sdkVersion": "54.0.0"
+  }
+}
+
