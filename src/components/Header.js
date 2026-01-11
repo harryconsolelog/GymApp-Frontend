@@ -33,7 +33,7 @@ const Header = ({ title, onMenuPress, onBackPress, showBack = false }) => {
 const styles = StyleSheet.create({
   header: {
     backgroundColor: colors.primary,
-    paddingTop: 50,
+    paddingTop: 30,
     paddingBottom: 15,
     paddingHorizontal: 15,
     flexDirection: 'row',

@@ -1,8 +1,6 @@
 import { config } from '../config/config';
 import { getToken } from './auth';
 
-export const API_BASE_URL = config.apiBaseUrl;
-
 export const apiEndpoints = {
   workouts: {
     list: '/workouts',
@@ -18,7 +16,9 @@ export const apiEndpoints = {
 };
 
 export const apiCall = async (endpoint, options = {}) => {
-  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  // Get fresh API URL each time to ensure it's current
+  const apiBaseUrl = config.apiBaseUrl;
+  const fullUrl = `${apiBaseUrl}${endpoint}`;
   const token = await getToken();
   
   try {
@@ -48,7 +48,6 @@ export const apiCall = async (endpoint, options = {}) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('API call failed:', error.message);
     throw error;
   }
 };

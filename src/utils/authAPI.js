@@ -32,9 +32,7 @@ export const authenticateWithGoogle = async (googleToken, userInfo = null) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Auth API error:', error);
     throw error;
   }
 };
-
 

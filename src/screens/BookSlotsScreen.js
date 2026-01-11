@@ -25,7 +25,6 @@ const BookSlotsScreen = () => {
       const data = await availabilityAPI.getAll();
       setAvailabilityRecords(data || []);
     } catch (error) {
-      console.error('Error fetching availability records:', error);
       Alert.alert('Error', 'Failed to load availability records');
     } finally {
       setLoading(false);
@@ -125,30 +124,17 @@ const BookSlotsScreen = () => {
   };
 
   const handleDeleteSlot = async (availabilityId, date) => {
-    Alert.alert(
-      'Delete Slot',
-      `Are you sure you want to delete the slot for ${date}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Delete specific slot/date from availability record
-              await availabilityAPI.deleteSlot(availabilityId, date);
-              await fetchAvailabilityRecords();
-              Alert.alert('Success', 'Slot deleted successfully');
-            } catch (error) {
-              console.error('Error deleting slot:', error);
-              
-              const errorMessage = parseErrorMessage(error);
-              Alert.alert('Error', errorMessage || 'Failed to delete slot');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      await availabilityAPI.deleteSlot(availabilityId, date);
+      await fetchAvailabilityRecords();
+    } catch (error) {
+      const errorMessage = parseErrorMessage(error);
+      if (Platform.OS === 'web') {
+        window.alert(`Error: ${errorMessage || 'Failed to delete slot'}`);
+      } else {
+        Alert.alert('Error', errorMessage || 'Failed to delete slot');
+      }
+    }
   };
 
   const handleTabChange = (tab) => {
@@ -227,7 +213,19 @@ const BookSlotsScreen = () => {
                     <Text style={styles.openButtonText}>Open</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => handleDeleteSlot(slot.availabilityId, slot.date)}
+                    onPress={(e) => {
+                      if (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }
+                      handleDeleteSlot(slot.availabilityId, slot.date);
+                    }}
+                    onPressIn={(e) => {
+                      if (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }
+                    }}
                     style={styles.deleteButton}
                   >
                     <Ionicons name="trash" size={24} color={colors.error} />

@@ -26,7 +26,6 @@
       "bundleIdentifier": "com.wellvantage.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "name": "WellVantage Demo App"
     },

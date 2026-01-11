@@ -19,11 +19,28 @@ const SignUpScreen = ({ navigation }) => {
     revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
   };
 
+  // Try to import runtime config (generated at build time)
+  // This file is created by scripts/inject-env.js during build
+  let runtimeConfig = null;
+  try {
+    const runtimeConfigModule = require('../config/runtimeConfig');
+    runtimeConfig = runtimeConfigModule?.runtimeConfig || null;
+  } catch (e) {
+    // Runtime config not available (development or first build)
+    runtimeConfig = null;
+  }
+
   const getRedirectUri = () => {
     if (Platform.OS === 'web') {
-      // For web, use the current origin or environment variable
-      return process.env.REACT_APP_OAUTH_REDIRECT_URI || 
-        (typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '');
+      // For web, try multiple sources in order of priority:
+      // 1. Runtime config (injected at build time)
+      // 2. process.env (works in development)
+      // 3. window.location (fallback)
+      return (
+        (runtimeConfig && runtimeConfig.oauthRedirectUri) ||
+        process.env.REACT_APP_OAUTH_REDIRECT_URI || 
+        (typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : '')
+      );
     }
     // For mobile, use custom scheme
     return AuthSession.makeRedirectUri({
@@ -61,7 +78,6 @@ const SignUpScreen = ({ navigation }) => {
           const accessToken = response.params?.access_token || response.params?.id_token;
           
           if (!accessToken) {
-            console.error('No access token in response');
             Alert.alert('Error', 'Failed to get access token from Google');
             setIsLoading(false);
             return;
@@ -85,7 +101,7 @@ const SignUpScreen = ({ navigation }) => {
               };
             }
           } catch (error) {
-            console.warn('Error fetching user info from Google:', error);
+            // Silently continue if user info fetch fails
           }
           
           const authResult = await authenticateWithGoogle(accessToken, userInfo);
@@ -100,7 +116,6 @@ const SignUpScreen = ({ navigation }) => {
           
           navigation.replace('WorkoutManagement');
         } catch (error) {
-          console.error('Auth flow error:', error);
           Alert.alert('Error', error.message || 'Authentication failed');
           setIsLoading(false);
         }
@@ -126,7 +141,6 @@ const SignUpScreen = ({ navigation }) => {
       setIsLoading(true);
       await promptAsync();
     } catch (error) {
-      console.error('Error initiating OAuth:', error);
       Alert.alert('Error', `Sign in failed: ${error.message || 'Unknown error'}`);
       setIsLoading(false);
     }

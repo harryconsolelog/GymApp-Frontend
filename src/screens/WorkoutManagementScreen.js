@@ -51,7 +51,6 @@ const WorkoutManagementScreen = () => {
       const data = await workoutAPI.getAll();
       setWorkoutPlans(data || []);
     } catch (error) {
-      console.error('Error fetching workout plans:', error);
       Alert.alert('Error', 'Failed to load workout plans');
     } finally {
       setLoading(false);
@@ -88,7 +87,6 @@ const WorkoutManagementScreen = () => {
       setEditingId(id);
       setShowForm(true);
     } catch (error) {
-      console.error('Error fetching workout plan:', error);
       Alert.alert('Error', 'Failed to load workout plan');
     } finally {
       setLoading(false);
@@ -96,27 +94,17 @@ const WorkoutManagementScreen = () => {
   };
 
   const handleDeleteWorkout = async (id) => {
-    Alert.alert(
-      'Delete Workout',
-      'Are you sure you want to delete this workout plan?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await workoutAPI.delete(id);
-              await fetchWorkoutPlans();
-              Alert.alert('Success', 'Workout plan deleted successfully');
-            } catch (error) {
-              console.error('Error deleting workout plan:', error);
-              Alert.alert('Error', 'Failed to delete workout plan');
-            }
-          },
-        },
-      ]
-    );
+    try {
+      await workoutAPI.delete(id);
+      await fetchWorkoutPlans();
+    } catch (error) {
+      const errorMessage = parseErrorMessage(error);
+      if (Platform.OS === 'web') {
+        window.alert(`Error: ${errorMessage || 'Failed to delete workout plan'}`);
+      } else {
+        Alert.alert('Error', errorMessage || 'Failed to delete workout plan');
+      }
+    }
   };
 
   const handleAddNewWorkout = () => {
@@ -342,8 +330,6 @@ const WorkoutManagementScreen = () => {
       await fetchWorkoutPlans();
       handleCancelForm();
     } catch (error) {
-      console.error('Error submitting workout plan:', error);
-      
       const errorMessage = parseErrorMessage(error);
       Alert.alert('Error', errorMessage || 'Failed to save workout plan');
     } finally {
@@ -557,55 +543,70 @@ const WorkoutManagementScreen = () => {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
-        <ScrollView 
-          style={[styles.content, Platform.OS === 'web' && styles.webContent]} 
-          contentContainerStyle={styles.listContentContainer}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          scrollEnabled={true}
-        >
-          <View style={styles.headingContainer}>
-            <Text style={styles.listHeading}>Custom Workout Plans</Text>
-            <View style={styles.headingDivider} />
-          </View>
-          
-          {workoutPlans.length === 0 ? (
-            <Text style={styles.emptyText}>No workout plans yet.</Text>
-          ) : (
-            workoutPlans.map((plan, index) => (
-              <View key={plan.id}>
-                <TouchableOpacity
-                  style={styles.workoutCard}
-                  onPress={() => handleSelectWorkout(plan.id)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.workoutName}>{plan.name}</Text>
-                  <TouchableOpacity
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      handleDeleteWorkout(plan.id);
-                    }}
-                    style={styles.deleteButton}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Ionicons name="trash-outline" size={24} color={colors.error} />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-                {index < workoutPlans.length - 1 && <View style={styles.cardDivider} />}
+        <View style={[styles.content, Platform.OS === 'web' && styles.webContent]}>
+          <View style={styles.listContentContainer}>
+            <View style={styles.headingContainer}>
+              <Text style={styles.listHeading}>Custom Workout Plans</Text>
+              <View style={styles.headingDivider} />
+            </View>
+            
+            <ScrollView 
+              style={styles.workoutPlansScrollView}
+              contentContainerStyle={styles.workoutPlansScrollContent}
+              showsVerticalScrollIndicator={true}
+              bounces={false}
+              scrollEnabled={true}
+            >
+              <View style={styles.workoutPlansContainer}>
+                {workoutPlans.length === 0 ? (
+                  <Text style={styles.emptyText}>No workout plans yet.</Text>
+                ) : (
+                  workoutPlans.map((plan, index) => (
+                    <View key={plan.id}>
+                      <TouchableOpacity
+                        style={styles.workoutCard}
+                        onPress={() => handleSelectWorkout(plan.id)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.workoutName}>{plan.name}</Text>
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            if (e) {
+                              e.stopPropagation();
+                              e.preventDefault();
+                            }
+                            handleDeleteWorkout(plan.id);
+                          }}
+                          onPressIn={(e) => {
+                            if (e) {
+                              e.stopPropagation();
+                              e.preventDefault();
+                            }
+                          }}
+                          style={styles.deleteButton}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <Ionicons name="trash-outline" size={24} color={colors.error} />
+                        </TouchableOpacity>
+                      </TouchableOpacity>
+                      {index < workoutPlans.length - 1 && <View style={styles.cardDivider} />}
+                    </View>
+                  ))
+                )}
               </View>
-            ))
-          )}
-        </ScrollView>
+            </ScrollView>
+            
+            {/* Add Button - Below the list */}
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleAddNewWorkout}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add-circle" size={50} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
-
-      {/* Floating Add Button - Bottom center as per Figma */}
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={handleAddNewWorkout}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={30} color={colors.white} />
-      </TouchableOpacity>
     </View>
   );
 };
@@ -628,16 +629,30 @@ const styles = StyleSheet.create({
     maxHeight: '100%',
   },
   listContentContainer: {
-    paddingTop: '50%',
+    flex: 1,
+    paddingTop: '35%',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'stretch',
     paddingHorizontal: 15,
+    paddingBottom: 20,
+  },
+  workoutPlansScrollView: {
+    maxHeight: 280,
+    minHeight: 100,
+  },
+  workoutPlansScrollContent: {
+    paddingVertical: 0,
+  },
+  workoutPlansContainer: {
+    display: 'flex',
+    flexDirection: 'column',
   },
   formContentContainer: {
     paddingHorizontal: 15,
     paddingBottom: 20,
+    paddingTop: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -686,21 +701,13 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 5,
   },
-  floatingButton: {
-    position: 'absolute',
-    bottom: 200,
-    left: '45%',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primary,
+  addButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
+    paddingVertical: 5,
+    borderRadius: 25,
+    marginTop: 30,
+    marginBottom: 20,
   },
   // Form Styles
   workoutNameInput: {
